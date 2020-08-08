@@ -6,12 +6,28 @@
 
 namespace resource {
 
+
   class Config {
   public:
-    explicit Config(std::string_view config_file);
-    std::string getName() const;
 
+    void LoadFromFile(std::string_view config_file);
+    void LoadFromData(const std::string& data);
+
+    int getWidth() const;
+    int getHeight() const;
+    int getFramerate() const;
+    int getPort() const;
+
+  private:
+    void LoadDefaultConfig();
+
+    int width_;
+    int height_;
+    int framerate_;
+    int port_;
   };
+
+
 
 }
 

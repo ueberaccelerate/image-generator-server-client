@@ -1,3 +1,16 @@
+#include "reciever_gui/recivermainwindow.h"
+
+#include <QApplication>
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+    ReciverMainWindow w;
+    w.show();
+    return a.exec();
+}
+
+/*
 #include <iostream>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
@@ -53,3 +66,4 @@ int main_thread(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
   return main_thread(argc, argv);
 }
+*/

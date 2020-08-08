@@ -900,3 +900,4 @@ MigrationBackup/
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,visualstudio,windows,macos,vim
 build/
+build*

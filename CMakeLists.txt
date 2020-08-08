@@ -16,16 +16,25 @@ add_library(common
 include(cmake/Dependency.cmake)
 
 add_executable( sender )
-add_executable( reciever )
+
+
+
+add_subdirectory(sendrecieveapp)
+
 
 target_include_directories( sender   PRIVATE include )
 target_include_directories( reciever PRIVATE include )
 
-add_subdirectory(sendrecieveapp)
 
 target_link_libraries( common   PRIVATE cppwarnings propertysdk  )
-target_link_libraries( sender   PRIVATE cppwarnings Boost::headers common)
+target_link_libraries( sender   PRIVATE cppwarnings Boost::headers Boost::program_options common )
 target_link_libraries( reciever PRIVATE cppwarnings Boost::headers common)
+
+
+if( UNIX )
+target_link_libraries( sender   PRIVATE pthread)
+target_link_libraries( reciever PRIVATE pthread)
+endif()
 
 if ( ENABLED_TEST )
 	add_subdirectory(test)

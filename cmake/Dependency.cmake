@@ -1,6 +1,6 @@
 include ( cmake/CPM.cmake )
 
-find_package(Boost 1.73.0 REQUIRED )
+find_package(Boost 1.73.0 COMPONENTS program_options REQUIRED )
 
 CPMAddPackage(
   NAME Catch2
