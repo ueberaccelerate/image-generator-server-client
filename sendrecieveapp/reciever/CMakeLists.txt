@@ -33,8 +33,24 @@ add_executable(reciever
 	${CMAKE_CURRENT_SOURCE_DIR}/reciever_gui/recivermainwindow.ui
 )
 
-target_link_libraries(reciever PRIVATE Qt5::Widgets)
+target_link_libraries( reciever PRIVATE cppwarnings Boost::headers common Qt5::Widgets)
 
+if( UNIX )
+target_link_libraries( reciever PRIVATE pthread)
+endif()
 
+if(WIN32)
+    get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+	get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
+	find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+	
+	add_custom_command(TARGET reciever POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E
+        env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
+            "$<TARGET_FILE:reciever>"
+    COMMENT "Running windeployqt..."
+)
+	
+endif()
 
 #target_sources( reciever PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
