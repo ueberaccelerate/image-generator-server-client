@@ -18,7 +18,7 @@ target_compile_features( cppwarnings INTERFACE cxx_std_17 )
 target_include_directories( common PUBLIC include )
 target_link_libraries( common   PRIVATE cppwarnings propertysdk  )
 
-add_subdirectory(sendrecieveapp)
+add_subdirectory(src)
 
 if ( SEND_RECIVE_APP_ENABLED_TEST )
 	add_subdirectory(test)
