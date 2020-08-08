@@ -15,7 +15,11 @@ public:
     ReciverMainWindow(QWidget *parent = nullptr);
     ~ReciverMainWindow();
 
+private slots:
+    void on_connectionButton_clicked();
+
 private:
     Ui::ReciverMainWindow *ui;
+    bool isConnected;
 };
 #endif // RECIVERMAINWINDOW_H
