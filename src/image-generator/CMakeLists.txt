@@ -8,10 +8,8 @@ target_include_directories( image-generator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/
 target_sources( image-generator PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/Server.h
 	${CMAKE_CURRENT_SOURCE_DIR}/include/Connection.h
-	${CMAKE_CURRENT_SOURCE_DIR}/include/TimerThread.h
 	${CMAKE_CURRENT_SOURCE_DIR}/Server.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Connection.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/TimerThread.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 )
 

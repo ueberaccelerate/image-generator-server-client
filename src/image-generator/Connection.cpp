@@ -1,5 +1,5 @@
 #include "Connection.h"
-#include "TimerThread.h"
+#include <async/TimerThread.h>
 
 #include <iostream>
 #include <vector>
@@ -13,7 +13,7 @@ namespace server {
   std::vector<unsigned char> generate_image(const Size& size) {
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<> distrib(1, 255);
+    std::uniform_int_distribution<> distrib(33, 196);
     std::vector<unsigned char> data(size.height*size.width, static_cast<unsigned char>(distrib(gen)));
 
     return data;
@@ -58,22 +58,16 @@ namespace server {
     std::cout << "send config data: " << len << '\n';
 
     tick_count_ = 0;
-    TimerThread generator{ 1,[&](TimerThread& t) {
-        auto raw_data = generate_image(Size{ 512, 512 });
+    async::TimerThread generator{ config_.getFramerate(),[&](async::TimerThread& t) {
 
+        auto raw_data = generate_image(Size{ config_.getWidth(), config_.getHeight() });
         len = boost::asio::write(socket_, boost::asio::buffer(raw_data), error);
-
         if (error) {
           t.stop();
           throw std::runtime_error("error generator send data");
         }
         tick_count_++;
     } };
-
-    //boost::asio::async_write(socket_, boost::asio::buffer(raw_data),
-    //  boost::bind(&tcp_connection::handle_write, shared_pointer,
-    //    boost::asio::placeholders::error,
-    //    boost::asio::placeholders::bytes_transferred));
   }
   Connection::~Connection() {
     std::cout << "close connection: tick.number = " << tick_count_ << '\n';

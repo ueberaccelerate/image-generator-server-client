@@ -10,7 +10,10 @@ include(cmake/warnings.cmake)
 include(cmake/Dependency.cmake)
 
 add_library( cppwarnings INTERFACE)
-add_library(common	include/resource/config.hpp)
+add_library(common	
+	include/resource/config.hpp
+	include/async/TimerThread.h
+)
 
 set_project_warinigs(cppwarnings)
 target_compile_features( cppwarnings INTERFACE cxx_std_17 )

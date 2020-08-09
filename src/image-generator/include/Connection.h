@@ -9,8 +9,8 @@
 namespace server {
   using boost::asio::ip::tcp;
   struct Size {
-    size_t width;
-    size_t height;
+    int width;
+    int height;
   };
   std::vector<unsigned char> generate_image(const Size& size);
   std::string make_daytime_string();

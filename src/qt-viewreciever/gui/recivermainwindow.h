@@ -1,10 +1,15 @@
 #ifndef RECIVERMAINWINDOW_H
 #define RECIVERMAINWINDOW_H
 
+#include <async/TimerThread.h>
 #include <resource/config.hpp>
 
 #include <QMainWindow>
 #include <QString>
+#include <QGraphicsScene>
+
+#include <memory>
+#include <vector>
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
@@ -30,8 +35,9 @@ signals:
     void successConnection();
     void sendConnection();
     void sendDisconnection();
+
+    void updateImage(std::vector<unsigned char>);
 private slots:
-    void on_connectionButton_clicked();
     void handleErrorAddress();
     void handleErrorConnection();
     void handleErrorCloseSocket();
@@ -39,25 +45,29 @@ private slots:
 
     void handleSuccessConnection();
 
-
     void handleConnection();
     void handleDisconnection();
 
+    void handleConnectionClicked();
+    void handleUpdateImage(std::vector<unsigned char>);
 
 private:
     Ui::ReciverMainWindow *ui;
-    resource::Config config_;
-    size_t config_size_;
+
     bool is_connected_;
     boost::asio::io_context io_context_;
     tcp::socket socket_;
+
+    resource::Config config_;
+    size_t config_size_;
+
+    async::TimerThread async_context_;
+    std::unique_ptr< async::TimerThread> async_reader_;
+
 
     void setRecieverStyle();
     void setDefaultValues();
     void setInfo(const QString &info);
     void updateConnectionStatus(bool /*connected*/);
-
-
-
 };
 #endif // RECIVERMAINWINDOW_H

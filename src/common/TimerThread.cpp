@@ -1,10 +1,10 @@
-#include "TimerThread.h"
+#include <async/TimerThread.h>
 
 #include <iostream>
 
 #include <ctime>
 
-namespace server {
+namespace async {
 
   TimerThread::TimerThread(const Frequency& freq, Callback&& callback) noexcept :
     isRunning_{ true },
@@ -16,6 +16,9 @@ namespace server {
   }
 
   TimerThread::~TimerThread() noexcept {
+    if (frequency_ == 0) {
+      stop();
+    }
     timer_future_.wait();
   }
 
@@ -35,12 +38,15 @@ namespace server {
       task = std::async(std::launch::async, [&]() {
         start_task_time = take();
         preaty_print("start task", start_task_time);
-        updateInterval();
+        if (frequency_ != 0) {
+          updateInterval();
+        }
         while (isRunning_)
         {
-          preaty_print("tick", take());
           callback_(*this);
-          std::this_thread::sleep_for(callback_interval_);
+          if (frequency_ != 0) {
+            std::this_thread::sleep_for(callback_interval_);
+          }
         }
       });
     }
@@ -70,7 +76,7 @@ namespace server {
     tm ltm;
     //    localtime_s(&ltm, &t);
     std::string_view timestr = ctime(&t);
-    printf("[%s] %s\n", timestr.data(), message.data());
+    printf("%s %s", message.data(), timestr.data() );
   }
 
 }
