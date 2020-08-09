@@ -69,10 +69,24 @@ namespace server {
           t.stop();
         }
         tick_count_++;
-        auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start); 
-        std::cout << duratio_ms.count() << " ms\n";
+        auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start).count(); 
+        const auto fps = config_.getFramerate();
+        const auto fps_ms = (1000.0 / config_.getFramerate());
+
+        const auto real_fps = (duratio_ms) / fps_ms;
+        const auto real_fps_ms = duratio_ms;
+
+
+        std::cout << "config fps: " << fps      << " one frame: " << fps_ms     << " ms\n";
+        std::cout << "real   fps: " << real_fps << " one frame: " << duratio_ms << " ms\n";
     } };
   }
+
+  /*
+    1 -- 16
+    x  -- 400
+    x = (400 * 1) / 16
+   */
   Connection::~Connection() {
     std::cout << "close connection: tick.number = " << tick_count_ << '\n';
   }
