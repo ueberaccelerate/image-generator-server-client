@@ -46,6 +46,7 @@ namespace server {
     }
     catch (...) {
       std::cerr << "error: create timer thread failture\n";
+      throw;
     }
     return std::move(task);
   }
@@ -68,7 +69,8 @@ namespace server {
     std::time_t t = TimeNamespace::to_time_t(point);
     tm ltm;
     //    localtime_s(&ltm, &t);
-    printf("[%02d:%02d:%02d] %s\n", ltm.tm_hour, ltm.tm_min, ltm.tm_sec, message.data());
+    std::string_view timestr = ctime(&t);
+    printf("[%s] %s\n", timestr.data(), message.data());
   }
 
 }

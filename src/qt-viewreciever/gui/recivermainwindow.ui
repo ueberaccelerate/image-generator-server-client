@@ -51,7 +51,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="newFrameLabel_5">
+      <widget class="QLabel" name="framerateLabel">
        <property name="font">
         <font>
          <family>Segoe UI</family>
@@ -95,7 +95,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="newFrameLabel_7">
+      <widget class="QLabel" name="widthLabel">
        <property name="font">
         <font>
          <family>Segoe UI</family>
@@ -139,7 +139,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="newFrameLabel_9">
+      <widget class="QLabel" name="heightLabel">
        <property name="font">
         <font>
          <family>Segoe UI</family>
@@ -219,7 +219,7 @@
      </font>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string/>
     </property>
    </widget>
    <widget class="QSplitter" name="splitter">

@@ -15,7 +15,7 @@ namespace server {
   class ImageGeneratorServer
   {
   public:
-    ImageGeneratorServer(boost::asio::io_context& io_context);
+    ImageGeneratorServer(boost::asio::io_context& io_context, const resource::Config& config);
 
   private:
     void start_accept();
@@ -23,6 +23,7 @@ namespace server {
     void handle_accept(Connection::pointer new_connection,
       const boost::system::error_code& error);
 
+    resource::Config config_;
     boost::asio::io_context& io_context_;
     tcp::acceptor acceptor_;
   };

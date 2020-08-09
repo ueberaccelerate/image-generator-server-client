@@ -24,9 +24,9 @@ namespace server {
     return ctime(&now);
   }
 
-  Connection::pointer Connection::create(boost::asio::io_context& io_context)
+  Connection::pointer Connection::create(boost::asio::io_context& io_context, const resource::Config& config)
   {
-    return pointer(new Connection(io_context));
+    return pointer(new Connection(io_context, config));
   }
 
   tcp::socket& Connection::socket()
@@ -39,17 +39,35 @@ namespace server {
     auto shared_pointer = shared_from_this();
 
     boost::system::error_code error;
-    boost::array<size_t, 2> resolutin_buffer{ 512, 512 };
-    size_t len = boost::asio::write(socket_, boost::asio::buffer(resolutin_buffer), error);
-    tick_count = 0;
+
+    const std::string serdata = config_.data();
+    boost::int32_t serdata_size = serdata.size();
+
+    //size_t len = boost::asio::write(socket_, serdata_size, error);
+    boost::array<boost::int32_t, 1> serdata_size_buffer{ serdata_size };
+    size_t len = boost::asio::write(socket_, boost::asio::buffer(serdata_size_buffer), error);
+
+    if (error) {
+      throw std::runtime_error("error send serdata_size_buffer");
+    }
+    std::cout << "send config size: " << len << '\n';
+    len = boost::asio::write(socket_, boost::asio::buffer(serdata), error);
+    if (error) {
+      throw std::runtime_error("error send serdata");
+    }
+    std::cout << "send config data: " << len << '\n';
+
+    tick_count_ = 0;
     TimerThread generator{ 1,[&](TimerThread& t) {
         auto raw_data = generate_image(Size{ 512, 512 });
 
         len = boost::asio::write(socket_, boost::asio::buffer(raw_data), error);
+
         if (error) {
           t.stop();
+          throw std::runtime_error("error generator send data");
         }
-        tick_count++;
+        tick_count_++;
     } };
 
     //boost::asio::async_write(socket_, boost::asio::buffer(raw_data),
@@ -58,10 +76,12 @@ namespace server {
     //    boost::asio::placeholders::bytes_transferred));
   }
   Connection::~Connection() {
-    std::cout << "close connection: tick.number = " << tick_count << '\n';
+    std::cout << "close connection: tick.number = " << tick_count_ << '\n';
   }
-  Connection::Connection(boost::asio::io_context& io_context)
-    : socket_(io_context)
+  Connection::Connection(boost::asio::io_context& io_context, const resource::Config& config)
+    : config_(config)
+    , tick_count_(0)
+    , socket_(io_context)
   {
   }
 

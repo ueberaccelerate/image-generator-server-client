@@ -22,9 +22,9 @@ std::vector<unsigned char> generate_image(const Size& size) {
 ReciverMainWindow::ReciverMainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::ReciverMainWindow)
-    , isConnected(false)
-    , io_context()
-    , socket(io_context)
+    , is_connected_(false)
+    , io_context_()
+    , socket_(io_context_)
 {
     ui->setupUi(this);
     setFixedSize(width(),height());
@@ -40,13 +40,27 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
     scene->setSceneRect(image.rect());
     ui->graphicsView->setScene(scene);
     image.save("frame1.png");
+/*
+    void errorConfigRead();
 
+*/
     connect(this, &ReciverMainWindow::errorAddress,
                          this, &ReciverMainWindow::handleErrorAddress);
     connect(this, &ReciverMainWindow::errorConnection,
                          this, &ReciverMainWindow::handleErrorConnection);
     connect(this, &ReciverMainWindow::successConnection,
                          this, &ReciverMainWindow::handleSuccessConnection);
+
+    connect(this, &ReciverMainWindow::errorCloseSocket,
+                         this, &ReciverMainWindow::handleErrorCloseSocket);
+
+    connect(this, &ReciverMainWindow::sendConnection,
+                         this, &ReciverMainWindow::handleConnection);
+    connect(this, &ReciverMainWindow::sendDisconnection,
+                         this, &ReciverMainWindow::handleDisconnection);
+
+    connect(this, &ReciverMainWindow::errorConfigRead,
+                         this, &ReciverMainWindow::handleErrorConfigRead);
 
 }
 
@@ -57,15 +71,47 @@ ReciverMainWindow::~ReciverMainWindow()
 
 void ReciverMainWindow::on_connectionButton_clicked()
 {
-    boost::system::error_code error;
-    if (isConnected) {
-        socket.close(error);
-        if (error) {
-            emit errorCloseSocket();
-        }
-        updateConnectionStatus(false);
+    if (is_connected_) {
+        emit sendDisconnection();
         return;
     }
+    emit sendConnection();
+}
+
+void ReciverMainWindow::handleErrorAddress()
+{
+    setInfo("ErrorAddress");
+    updateConnectionStatus(false);
+}
+
+void ReciverMainWindow::handleErrorConnection()
+{
+    setInfo("ErrorConnection");
+    updateConnectionStatus(false);
+
+}
+
+void ReciverMainWindow::handleErrorCloseSocket()
+{
+    setInfo("CloseSocket");
+    updateConnectionStatus(false);
+}
+
+void ReciverMainWindow::handleSuccessConnection()
+{
+    setInfo("SuccessConnection");
+    updateConnectionStatus(true);
+
+    qDebug() << "Config size: " << config_size_;
+
+    ui->framerateLabel->setText(QString::number(config_.getFramerate()));
+    ui->widthLabel->setText(QString::number(config_.getWidth()));
+    ui->heightLabel->setText(QString::number(config_.getHeight()));
+}
+
+void ReciverMainWindow::handleConnection()
+{
+    boost::system::error_code error;
     try
     {
         const boost::asio::ip::address_v4 ep = boost::asio::ip::make_address_v4(ui->ipLineEdit->text().toStdString(),error);
@@ -74,12 +120,39 @@ void ReciverMainWindow::on_connectionButton_clicked()
             emit errorAddress();
             return ;
         }
-        socket.connect(tcp::endpoint(boost::asio::ip::address(ep), port), error);
+        socket_.connect(tcp::endpoint(boost::asio::ip::address(ep), port), error);
 
         if (error) {
             emit errorConnection();
             return ;
         }
+
+        boost::array<boost::int32_t, 1> config_size;
+        socket_.read_some(boost::asio::buffer(config_size), error);
+        if (error) {
+            emit errorConfigRead();
+            return ;
+        }
+        config_size_ = config_size[0];
+
+
+        std::string serdata;
+        // buffer enough to hold data
+        boost::array<char, 1024> config_buffer;
+
+        size_t len = socket_.read_some(boost::asio::buffer(config_buffer), error);
+        if (error) {
+            emit errorConfigRead();
+            return ;
+        }
+        if (len != config_size_) {
+            emit errorConfigRead();
+            return ;
+        }
+        std::copy( config_buffer.begin(),config_buffer.begin() + len, std::back_inserter(serdata));
+
+        config_.LoadFromData(serdata);
+        qDebug() << config_.getWidth() << config_.getHeight() << config_.getFramerate();
         emit successConnection();
     }
     catch (std::exception& e)
@@ -88,29 +161,33 @@ void ReciverMainWindow::on_connectionButton_clicked()
     }
 }
 
-void ReciverMainWindow::handleErrorAddress()
+void ReciverMainWindow::handleDisconnection()
 {
-    setInfo("handleErrorAddress");
+    boost::system::error_code error;
+    setInfo("SuccessDisconnection");
+    socket_.close(error);
+    if (error) {
+        emit errorCloseSocket();
+    }
     updateConnectionStatus(false);
 }
 
-void ReciverMainWindow::handleErrorConnection()
+void ReciverMainWindow::handleErrorConfigRead()
 {
-    setInfo("handleErrorConnection");
-    updateConnectionStatus(false);
-
+    setInfo("Disconnecting");
+    emit sendDisconnection();
 }
 
-void ReciverMainWindow::handleCloseSocket()
+
+void ReciverMainWindow::setInfo(const QString &info)
 {
-    setInfo("handleCloseSocket");
-    updateConnectionStatus(false);
+    ui->infoLabel->setText(info);
 }
 
-void ReciverMainWindow::handleSuccessConnection()
+void ReciverMainWindow::updateConnectionStatus(bool connected)
 {
-    setInfo("handleSuccessConnection");
-    updateConnectionStatus(true);
+    is_connected_ = connected;
+    ui->connectionButton->setText(is_connected_ ? "Disconnect" : "Connect");
 }
 
 void ReciverMainWindow::setRecieverStyle()
@@ -146,15 +223,4 @@ void ReciverMainWindow::setDefaultValues()
 {
     ui->ipLineEdit->setText("127.0.0.1");
     ui->portSpinBox->setValue(1234);
-}
-
-void ReciverMainWindow::setInfo(const QString &info)
-{
-    ui->infoLabel->setText(info);
-}
-
-void ReciverMainWindow::updateConnectionStatus(bool connected)
-{
-    isConnected = connected;
-    ui->connectionButton->setText(isConnected ? "Disconnect" : "Connect");
 }

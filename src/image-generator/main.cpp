@@ -24,9 +24,9 @@ int main(int argc, char **argv) {
       return 1;
     }
 
+    resource::Config config;
     if (vm.count("config")) {
         std::cout << config_file << "\n";
-        resource::Config config;
         config.LoadFromFile(config_file);
     }
     else {
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
       return 1;
     }
     boost::asio::io_context io_context;
-    server::ImageGeneratorServer server(io_context);
+    server::ImageGeneratorServer server(io_context, config);
     io_context.run();
   }
   catch (std::exception& e)

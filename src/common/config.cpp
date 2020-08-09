@@ -22,12 +22,16 @@ namespace resource {
       YAML::Emitter out;
       out << YAML::LoadFile(config_file.data());
       const std::string ser_data = out.c_str();
+
       config.deserialize(ser_data);
+
 
       height_ = config.height.get();
       width_ = config.width.get();
       framerate_ = config.framerate.get();
       port_ = config.port.get();
+
+      serdata_ = ser_data;
 
       std::cout 
         << "height: "    << height_    << "\n"
@@ -46,21 +50,32 @@ namespace resource {
     try {
       if (data.empty())
         throw std::runtime_error("empty data");
-      config.deserialize(data);
+      serdata_ = data;
+      config.deserialize(serdata_);
+
+      height_ = config.height.get();
+      width_ = config.width.get();
+      framerate_ = config.framerate.get();
+      port_ = config.port.get();
     }
-    catch (property::serialize_error& e) {
-      std::cout << e.what();
+    catch (std::exception& e) {
+      std::cout << serdata_ << e.what();
       throw;
     }
   }
 
-  int resource::Config::getWidth() const { return 0; }
+  int resource::Config::getWidth() const { return width_; }
 
-  int resource::Config::getHeight() const { return 0; }
+  int resource::Config::getHeight() const { return height_; }
 
-  int resource::Config::getFramerate() const { return 0; }
+  int resource::Config::getFramerate() const { return framerate_; }
 
-  int resource::Config::getPort() const { return 0; }
+  int resource::Config::getPort() const { return port_; }
+
+  const std::string& resource::Config::data() const
+  {
+      return serdata_;
+  }
 
   void Config::LoadDefaultConfig() {
     std::cout << "** Load default server config\n";
@@ -75,9 +90,10 @@ namespace resource {
     config.width.set(width_);
     config.framerate.set(framerate_);
     config.port.set(port_);
-    config.serialize([](const auto &serdata) {
+    config.serialize([&](const auto &serdata) {
       std::ofstream savedata("config.yaml");
       savedata << serdata;
+      serdata_ = serdata;
     });
     std::cout
       << "height: "    << height_    << "\n"

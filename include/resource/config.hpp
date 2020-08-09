@@ -18,6 +18,8 @@ namespace resource {
     int getFramerate() const;
     int getPort() const;
 
+    const std::string &data() const;
+
   private:
     void LoadDefaultConfig();
 
@@ -25,6 +27,8 @@ namespace resource {
     int height_;
     int framerate_;
     int port_;
+
+    std::string serdata_;
   };
 
 
