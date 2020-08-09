@@ -20,8 +20,7 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
     , io_context_()
     , socket_(io_context_)
     , work_(boost::asio::make_work_guard(io_context_))
-    , work_thread_(new boost::thread(boost::bind(&boost::asio::io_context::run, &io_context_)))
-{
+    , work_thread_(new boost::thread(boost::bind(&boost::asio::io_context::run, &io_context_))) {
     ui->setupUi(this);
     //setFixedSize(width(),height()); 
     setRecieverStyle();
@@ -78,7 +77,10 @@ void ReciverMainWindow::handleErrorConnection()
 {
     setInfo("ErrorConnection");
     updateConnectionStatus(false);
-    emit sendDisconnection();
+    if (async_reader_) {
+      async_reader_->stop();
+      async_reader_.reset();
+    }
 }
 
 void ReciverMainWindow::handleErrorCloseSocket()
@@ -93,7 +95,7 @@ void ReciverMainWindow::handleSuccessConnection()
     updateConnectionStatus(true);
 
     qDebug() << "Config size: " << config_size_;
-
+    frame_count_ = 0;
     ui->framerateLabel->setText(QString::number(config_.getFramerate()));
     ui->widthLabel->setText(QString::number(config_.getWidth()));
     ui->heightLabel->setText(QString::number(config_.getHeight()));
@@ -107,7 +109,7 @@ void ReciverMainWindow::handleSuccessConnection()
       std::vector<unsigned char> image_data;
       int total_read = buffer_size;
 
-
+      image_data.reserve(total_read);
       while (true) {
         std::vector<unsigned char> buff(total_read);
         if (total_read < 0) {
@@ -134,6 +136,7 @@ void ReciverMainWindow::handleSuccessConnection()
         qDebug() << "lost";
         return; 
       }
+      frame_count_++;
       emit updateImage(image_data);
     });
 }
@@ -143,6 +146,7 @@ void ReciverMainWindow::handleUpdateImage(std::vector<unsigned char> buffer)
   QImage image(buffer.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
   ui->drawableArea->setPixmap(QPixmap::fromImage(image));
   ui->newFrameLabel->setText(QTime::currentTime().toString());
+  ui->framecountLabel->setText(QString::number(frame_count_));
 }
 
 void ReciverMainWindow::handleConnection()
@@ -207,9 +211,10 @@ void ReciverMainWindow::handleDisconnection()
 {
     boost::system::error_code error;
     setInfo("SuccessDisconnection");
-
-    async_reader_->stop();
-    async_reader_.reset();
+    if (async_reader_) {
+      async_reader_->stop();
+      async_reader_.reset();
+    }
     socket_.close(error);
     if (error) {
         emit errorCloseSocket();

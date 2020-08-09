@@ -7,6 +7,13 @@
 #include <boost/enable_shared_from_this.hpp>
 
 namespace server {
+
+  struct Record {
+    int total_frame_send;
+    float real_fps;
+
+  };
+
   using boost::asio::ip::tcp;
   struct Size {
     int width;
