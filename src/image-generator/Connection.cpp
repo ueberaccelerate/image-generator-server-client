@@ -67,7 +67,6 @@ namespace server {
         auto len = boost::asio::write(socket_, boost::asio::buffer(raw_data), error);
         if (error) {
           t.stop();
-          throw std::runtime_error("error generator send data");
         }
         tick_count_++;
         auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start); 

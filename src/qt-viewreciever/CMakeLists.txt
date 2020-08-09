@@ -33,7 +33,7 @@ add_executable(qt-viewreciever
 	${CMAKE_CURRENT_SOURCE_DIR}/gui/recivermainwindow.ui
 )
 
-target_link_libraries( qt-viewreciever PRIVATE cppwarnings Boost::headers common Qt5::Widgets)
+target_link_libraries( qt-viewreciever PRIVATE cppwarnings Boost::headers Boost::thread common Qt5::Widgets)
 
 if( UNIX )
 target_link_libraries( qt-viewreciever PRIVATE pthread)

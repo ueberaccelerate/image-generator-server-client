@@ -19,9 +19,8 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
     , is_connected_(false)
     , io_context_()
     , socket_(io_context_)
-    , async_context_(0, [&](async::TimerThread& t){
-      io_context_.run();
-    })
+    , work_(boost::asio::make_work_guard(io_context_))
+    , work_thread_(new boost::thread(boost::bind(&boost::asio::io_context::run, &io_context_)))
 {
     ui->setupUi(this);
     //setFixedSize(width(),height()); 

@@ -13,6 +13,8 @@
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/scoped_ptr.hpp>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class ReciverMainWindow; }
@@ -61,7 +63,10 @@ private:
     resource::Config config_;
     size_t config_size_;
 
-    async::TimerThread async_context_;
+    boost::asio::executor_work_guard<
+      boost::asio::io_context::executor_type> work_;
+    boost::scoped_ptr<boost::thread> work_thread_;
+
     std::unique_ptr< async::TimerThread> async_reader_;
 
 
