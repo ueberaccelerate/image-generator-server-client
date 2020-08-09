@@ -39,7 +39,7 @@ signals:
     void sendConnection();
     void sendDisconnection();
 
-    void updateImage(std::vector<unsigned char>);
+    void updateImage();
 private slots:
     void handleErrorAddress();
     void handleErrorConnection();
@@ -52,7 +52,7 @@ private slots:
     void handleDisconnection();
 
     void handleConnectionClicked();
-    void handleUpdateImage(std::vector<unsigned char>);
+    void handleUpdateImage();
 
 private:
     Ui::ReciverMainWindow *ui;
@@ -71,6 +71,8 @@ private:
     boost::scoped_ptr<boost::thread> work_thread_;
 
     std::unique_ptr< async::TimerThread> async_reader_;
+
+    std::vector<unsigned char> image_data_;
 
 
     void setRecieverStyle();

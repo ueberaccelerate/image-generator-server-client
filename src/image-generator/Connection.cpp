@@ -73,7 +73,7 @@ namespace server {
         const auto fps = config_.getFramerate();
         const auto fps_ms = (1000.0 / config_.getFramerate());
 
-        const auto real_fps = (duratio_ms) / fps_ms;
+        const auto real_fps = (1000.0) / duratio_ms;
         const auto real_fps_ms = duratio_ms;
 
 
@@ -81,12 +81,6 @@ namespace server {
         std::cout << "real   fps: " << real_fps << " one frame: " << duratio_ms << " ms\n";
     } };
   }
-
-  /*
-    1 -- 16
-    x  -- 400
-    x = (400 * 1) / 16
-   */
   Connection::~Connection() {
     std::cout << "close connection: tick.number = " << tick_count_ << '\n';
   }
