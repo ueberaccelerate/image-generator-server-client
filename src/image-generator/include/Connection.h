@@ -34,6 +34,8 @@ namespace server {
     resource::Config config_;
     std::atomic_int tick_count_;
     tcp::socket socket_;
+
+    void sendConfig();
   };
 }
 

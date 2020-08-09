@@ -33,40 +33,45 @@ namespace server {
   {
     return socket_;
   }
-
-  void Connection::start()
-  {
-    auto shared_pointer = shared_from_this();
-
+  void Connection::sendConfig() {
     boost::system::error_code error;
 
-    const std::string serdata = config_.data();
-    boost::int32_t serdata_size = serdata.size();
+    auto shared_pointer = shared_from_this();
 
-    //size_t len = boost::asio::write(socket_, serdata_size, error);
+    const std::string serdata = config_.data();
+    const boost::int32_t serdata_size = serdata.size();
+
     boost::array<boost::int32_t, 1> serdata_size_buffer{ serdata_size };
     size_t len = boost::asio::write(socket_, boost::asio::buffer(serdata_size_buffer), error);
-
     if (error) {
       throw std::runtime_error("error send serdata_size_buffer");
     }
-    std::cout << "send config size: " << len << '\n';
+    std::cout << "send config size bytes: " << len << " should send: " << sizeof(boost::int32_t) << " bytes\n";
+
     len = boost::asio::write(socket_, boost::asio::buffer(serdata), error);
     if (error) {
       throw std::runtime_error("error send serdata");
     }
-    std::cout << "send config data: " << len << '\n';
 
+    std::cout << "send config data bytes: " << len << " should send: " << serdata.size() << " bytes\n";
+  }
+
+  void Connection::start()
+  {
+    sendConfig();
     tick_count_ = 0;
     async::TimerThread generator{ config_.getFramerate(),[&](async::TimerThread& t) {
-
+        boost::system::error_code error;
+        auto start = async::TimerThread::FastTimeNamespace::now();
         auto raw_data = generate_image(Size{ config_.getWidth(), config_.getHeight() });
-        len = boost::asio::write(socket_, boost::asio::buffer(raw_data), error);
+        auto len = boost::asio::write(socket_, boost::asio::buffer(raw_data), error);
         if (error) {
           t.stop();
           throw std::runtime_error("error generator send data");
         }
         tick_count_++;
+        auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start); 
+        std::cout << duratio_ms.count() << " ms\n";
     } };
   }
   Connection::~Connection() {
@@ -79,7 +84,7 @@ namespace server {
   {
   }
 
-  void Connection::handle_write(const boost::system::error_code& error,
+  void Connection::handle_write(const boost::system::error_code& /*error*/,
     size_t /*bytes_transferred*/)
   {
 

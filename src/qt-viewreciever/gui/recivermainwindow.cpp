@@ -6,6 +6,8 @@
 #include <QPushButton>
 #include <QImage>
 #include <QGraphicsPixmapItem>
+#include <QTime>
+
 #include <random>
 #include <algorithm>
 
@@ -141,6 +143,7 @@ void ReciverMainWindow::handleUpdateImage(std::vector<unsigned char> buffer)
 {
   QImage image(buffer.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
   ui->drawableArea->setPixmap(QPixmap::fromImage(image));
+  ui->newFrameLabel->setText(QTime::currentTime().toString());
 }
 
 void ReciverMainWindow::handleConnection()

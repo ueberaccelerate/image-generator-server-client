@@ -30,8 +30,7 @@ int main(int argc, char **argv) {
         config.LoadFromFile(config_file);
     }
     else {
-      std::cerr << "config file was not set.\n";
-      return 1;
+        config.LoadFromFile("default");
     }
     boost::asio::io_context io_context;
     server::ImageGeneratorServer server(io_context, config);

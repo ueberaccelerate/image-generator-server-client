@@ -12,6 +12,7 @@ public:
   using Interval = std::chrono::milliseconds;
   using Callback = std::function<void(TimerThread &t)>;
   using TimeNamespace = std::chrono::system_clock;
+  using FastTimeNamespace = std::chrono::steady_clock;
   using TimePoint = TimeNamespace::time_point;
 
   /// Start an asynchronous loop with specific timeout.
