@@ -26,6 +26,7 @@ namespace server {
     resource::Config config_;
     boost::asio::io_context& io_context_;
     tcp::acceptor acceptor_;
+    Connection::pointer current_connection_;
   };
 }
 

@@ -15,11 +15,19 @@ namespace async {
 
   }
 
+  TimerThread::TimerThread(const Interval& interval, Callback&& callback) noexcept 
+    : isRunning_ {true}
+    , frequency_ {0}
+    , callback_interval_{ interval }
+    , callback_{ callback },
+      timer_future_{ create_timer_thread() }
+  {
+  }
+
   TimerThread::~TimerThread() noexcept {
-    if (frequency_ == 0) {
-      stop();
-    }
+    stop();
     timer_future_.wait();
+    preaty_print("destroy time", take());
   }
 
   void TimerThread::setFrequency(const Frequency& new_freq) {
@@ -44,9 +52,7 @@ namespace async {
         while (isRunning_)
         {
           callback_(*this);
-          if (frequency_ != 0) {
-            std::this_thread::sleep_for(callback_interval_);
-          }
+          std::this_thread::sleep_for(callback_interval_);
         }
       });
     }

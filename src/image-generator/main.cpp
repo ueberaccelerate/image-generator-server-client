@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
         config.LoadFromFile(config_file);
     }
     else {
-        config.LoadFromFile("default");
+        config.LoadFromFile("config.yaml");
     }
     boost::asio::io_context io_context;
     server::ImageGeneratorServer server(io_context, config);

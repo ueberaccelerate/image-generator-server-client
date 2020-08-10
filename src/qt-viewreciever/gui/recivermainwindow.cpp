@@ -17,7 +17,6 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::ReciverMainWindow)
     , is_connected_(false)
-    , io_context_()
     , socket_(io_context_)
     , work_(boost::asio::make_work_guard(io_context_))
     , work_thread_(new boost::thread(boost::bind(&boost::asio::io_context::run, &io_context_))) {
@@ -54,9 +53,9 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
 ReciverMainWindow::~ReciverMainWindow()
 {
     delete ui;
-    if (async_reader_) {
-      async_reader_->stop();
-    }
+    work_.reset();
+    if (work_thread_)
+      work_thread_->join();
 }
 
 void ReciverMainWindow::handleConnectionClicked()
@@ -78,10 +77,6 @@ void ReciverMainWindow::handleErrorConnection()
 {
     setInfo("ErrorConnection");
     updateConnectionStatus(false);
-    if (async_reader_) {
-      async_reader_->stop();
-      async_reader_.reset();
-    }
 }
 
 void ReciverMainWindow::handleErrorCloseSocket()
@@ -145,7 +140,7 @@ void ReciverMainWindow::handleSuccessConnection()
       const auto fps = config_.getFramerate();
       const auto fps_ms = (1000.0 / config_.getFramerate());
 
-      const auto real_fps = (1000.0) / duratio_ms;
+      const auto real_fps = (duratio_ms == 0) ? 60 : (1000.0) / duratio_ms;
       const auto real_fps_ms = duratio_ms;
 
 
@@ -226,10 +221,7 @@ void ReciverMainWindow::handleDisconnection()
 {
     boost::system::error_code error;
     setInfo("SuccessDisconnection");
-    if (async_reader_) {
-      async_reader_->stop();
-      async_reader_.reset();
-    }
+
     socket_.close(error);
     if (error) {
         emit errorCloseSocket();

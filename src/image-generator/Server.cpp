@@ -13,15 +13,18 @@ namespace server {
     : 
      io_context_(io_context)
     , config_(config)
-    , acceptor_(io_context, tcp::endpoint(tcp::v4(), 1234))
+    , acceptor_(io_context, tcp::endpoint(tcp::v4(), config.getPort()))
   {
     start_accept();
   }
 
   void ImageGeneratorServer::start_accept()
   {
-    auto connection = Connection::create(io_context_, config_);
-    Connection::pointer new_connection = connection;
+    Connection::pointer new_connection = Connection::create(io_context_, config_, [&](const boost::system::error_code& ec) {
+      if (ec) {
+        current_connection_ = nullptr;
+      }
+    });
     acceptor_.async_accept(new_connection->socket(),
       boost::bind(&ImageGeneratorServer::handle_accept, this, new_connection,
         boost::asio::placeholders::error));
@@ -30,11 +33,11 @@ namespace server {
   void ImageGeneratorServer::handle_accept(Connection::pointer new_connection,
     const boost::system::error_code& error)
   {
-    std::cout << "new connection\n";
     if (!error)
     {
       try {
         new_connection->start();
+        current_connection_ = new_connection;
       }
       catch (const std::exception& e) {
         std::cerr << e.what() << "\n";

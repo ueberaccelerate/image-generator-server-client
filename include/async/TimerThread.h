@@ -15,7 +15,7 @@ public:
   using FastTimeNamespace = std::chrono::steady_clock;
   using TimePoint = TimeNamespace::time_point;
 
-  /// Start an asynchronous loop with specific timeout.
+  /// Start an asynchronous loop with specific frequency.
   /**
    * @param freq is a period of call @callback
    *
@@ -33,6 +33,25 @@ public:
    * @endcode
    */
   explicit TimerThread(const Frequency &freq, Callback &&callback) noexcept;
+
+  /// Start an asynchronous loop with specific interval .
+/**
+ * @param interval is a period of call @callback
+ *
+ * @param callback The handler to be called when the timer fire:
+ * @code void handler(
+ *   TimerThread& t // retrunt this object
+ * ); @endcode
+ *
+ * @par Example
+ * @code
+ * void handler(TimerThread& t)
+ * {
+ *   t.stop();  // call handler once time and stop
+ * }
+ * @endcode
+ */
+  explicit TimerThread(const Interval& freq, Callback&& callback) noexcept;
 
   TimerThread(const TimerThread &) = delete;
   TimerThread &operator=(const TimerThread &) = delete;
