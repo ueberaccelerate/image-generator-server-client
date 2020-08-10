@@ -66,6 +66,7 @@ private:
     size_t config_size_;
 
     std::atomic_int frame_count_;
+    std::atomic_int framerate_real_;
 
     boost::asio::executor_work_guard<
       boost::asio::io_context::executor_type> work_;

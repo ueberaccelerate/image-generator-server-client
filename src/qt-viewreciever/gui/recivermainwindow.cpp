@@ -138,7 +138,7 @@ void ReciverMainWindow::handleDisconnection()
 {
     boost::system::error_code error;
     setInfo("SuccessDisconnection");
-
+    async_reader_ = nullptr;
     socket_.close(error);
     if (error) {
         emit errorCloseSocket();
@@ -240,13 +240,15 @@ void ReciverMainWindow::recieveGeneratedImage(async::TimerThread &)
       qDebug() << "lost";
       return;
     }
-    frame_count_++;
     auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start).count();
     const auto fps = config_.getFramerate();
     const auto real_fps_ms = duratio_ms;
     const auto real_fps = (real_fps_ms == 0) ? fps : (1000.0) / real_fps_ms;
 
-    ui->realFramerateLabel->setText(QString::number(real_fps));
+    frame_count_.fetch_add(1, std::memory_order_acquire);
+    framerate_real_.store(real_fps, std::memory_order_acquire);
+//    frame_count_++;
+//    framerate_real_ = real_fps;
     emit updateImage();
 }
 #include <QtConcurrent/QtConcurrent>
@@ -256,7 +258,8 @@ void ReciverMainWindow::handleUpdateImage()
   QImage image(image_data_.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
   ui->drawableArea->setPixmap(QPixmap::fromImage(image));
   ui->newFrameLabel->setText(QTime::currentTime().toString());
-  ui->framecountLabel->setText(QString::number(frame_count_));
+  ui->framecountLabel->setText(QString::number(frame_count_.load(std::memory_order_relaxed)));
+  ui->realFramerateLabel->setText(QString::number(framerate_real_.load(std::memory_order_relaxed)));
 //  auto future = std::async([&](){
 //      auto frame_index = frame_count_.load();
 //      image.save(QString("frame_")+QString::number(frame_index) + ".png");
