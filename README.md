@@ -2,7 +2,7 @@
 ![Alt-текст](https://github.com/ueberaccelerate/image-generator-server-client/blob/master/doc/image-generator.png "server")
 ![Alt-текст](https://github.com/ueberaccelerate/image-generator-server-client/blob/master/doc/qt-reciever.png "client")
 ## Description
-Небольшого программного комплекса, состоящего из нескольких,
+Небольшой программный комплекс, состоящий из нескольких,
 взаимодействующих друг с другом приложений. 
 Одно из приложений генерирует информацию и выдает её с использованием TCP/IP стека. 
 Клиентское приложение принимает информацию, отображает её на экране вместе со статистикой, параллельно записывая на диск. 
