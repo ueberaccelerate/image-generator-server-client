@@ -20,8 +20,6 @@ namespace server {
     int width;
     int height;
   };
-  std::vector<unsigned char> generate_image(const Size& size);
-  std::string make_daytime_string();
 
   class Connection
     : public boost::enable_shared_from_this<Connection>

@@ -80,5 +80,8 @@ private:
     void setDefaultValues();
     void setInfo(const QString &info);
     void updateConnectionStatus(bool /*connected*/);
+
+    void recieveConfig();
+    void recieveGeneratedImage(async::TimerThread& );
 };
 #endif // RECIVERMAINWINDOW_H

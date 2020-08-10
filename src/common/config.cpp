@@ -79,9 +79,9 @@ namespace resource {
 
   void Config::LoadDefaultConfig() {
     std::cout << "** Load default server config\n";
-    height_ = 256;
-    width_ = 256;
-    framerate_ = 1;
+    height_ = 6000;
+    width_ = 6000;
+    framerate_ = 60;
     port_ = 1234;
     ServerConfig config{
         "ImageGeneratorServer",

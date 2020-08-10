@@ -7,22 +7,22 @@
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 
+namespace {
+    std::vector<unsigned char> generate_image(const server::Size& size) {
+      std::random_device rd;  //Will be used to obtain a seed for the random number engine
+      std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+      std::uniform_int_distribution<> distrib(33, 196);
+      std::vector<unsigned char> data(size.height*size.width, static_cast<unsigned char>(distrib(gen)));
+
+      return data;
+    }
+}
+
 namespace server {
   using boost::asio::ip::tcp;
 
-  std::vector<unsigned char> generate_image(const Size& size) {
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<> distrib(33, 196);
-    std::vector<unsigned char> data(size.height*size.width, static_cast<unsigned char>(distrib(gen)));
 
-    return data;
-  }
-  std::string make_daytime_string() {
-    using namespace std; // For time_t, time and ctime;
-    time_t now = time(0);
-    return ctime(&now);
-  }
+
 
   Connection::pointer Connection::create(boost::asio::io_context& io_context, const resource::Config& config, HandlerError&& handler)
   {

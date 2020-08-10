@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QGraphicsPixmapItem>
 #include <QTime>
+#include <QDir>
 
 #include <random>
 #include <algorithm>
@@ -93,7 +94,6 @@ void ReciverMainWindow::handleSuccessConnection()
     setInfo("SuccessConnection");
     updateConnectionStatus(true);
 
-    qDebug() << "Config size: " << config_size_;
     frame_count_ = 0;
     ui->framerateLabel->setText(QString::number(config_.getFramerate()));
     ui->widthLabel->setText(QString::number(config_.getWidth()));
@@ -101,66 +101,10 @@ void ReciverMainWindow::handleSuccessConnection()
 
     image_data_.reserve(config_.getWidth() * config_.getHeight());
 
-    async_reader_ = std::make_unique<async::TimerThread>(config_.getFramerate(), [&](async::TimerThread& ) {
-
-      boost::system::error_code error;
-      const auto buffer_size = config_.getWidth() * config_.getHeight();
-
-      auto start = async::TimerThread::FastTimeNamespace::now();
-      int total_read = buffer_size;
-
-      ReadBuffer buff;
-      image_data_.clear();
-      while (true) {
-        
-        int len = socket_.read_some(boost::asio::buffer(buff), error);
-        if (len == 0) {
-          emit errorConnection();
-          return;
-        }
-        if (error) {
-          emit errorConnection();
-          return;
-        }
-        total_read -= len;
-
-        if (total_read < 0) {
-          len += total_read;
-          total_read = 0;
-        }
-
-        std::copy(buff.begin(), buff.begin() + len, std::back_inserter(image_data_));
-        if (total_read == 0) {
-          break;
-        }
-      }
-      if (image_data_.size() != buffer_size) {
-        qDebug() << "lost";
-        return; 
-      }
-      frame_count_++;
-      auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start).count();
-      const auto fps = config_.getFramerate();
-      const auto fps_ms = (1000.0 / config_.getFramerate());
-
-      const auto real_fps_ms = duratio_ms;
-      const auto real_fps = (real_fps_ms == 0) ? 60 : (1000.0) / real_fps_ms;
-
-
-      qDebug() <<  "config fps: " << fps      << " one frame: " << fps_ms     << " ms\n";
-      qDebug() <<  "real   fps: " << real_fps << " one frame: " << real_fps_ms << " ms\n";
-
-      emit updateImage();
-    });
+    async_reader_ = std::make_unique<async::TimerThread>(config_.getFramerate(), boost::bind(&ReciverMainWindow::recieveGeneratedImage, this, _1));
 }
 
-void ReciverMainWindow::handleUpdateImage()
-{
-  QImage image(image_data_.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
-  ui->drawableArea->setPixmap(QPixmap::fromImage(image));
-  ui->newFrameLabel->setText(QTime::currentTime().toString());
-  ui->framecountLabel->setText(QString::number(frame_count_));
-}
+
 
 void ReciverMainWindow::handleConnection()
 {
@@ -180,38 +124,8 @@ void ReciverMainWindow::handleConnection()
               emit errorConnection();
               return ;
           }
-
-          boost::system::error_code error_code;
-          boost::array<boost::int32_t, 1> config_size;
-          socket_.read_some(boost::asio::buffer(config_size), error_code);
-          if (error_code) {
-              emit errorConfigRead();
-              return ;
-          }
-          config_size_ = config_size[0];
-
-
-          std::string serdata;
-          // buffer enough to hold data
-          boost::array<char, 1024> config_buffer;
-
-          size_t len = socket_.read_some(boost::asio::buffer(config_buffer), error_code);
-          if (error_code) {
-              emit errorConfigRead();
-              return ;
-          }
-          if (len != config_size_) {
-              emit errorConfigRead();
-              return ;
-          }
-          std::copy( config_buffer.begin(),config_buffer.begin() + len, std::back_inserter(serdata));
-
-          config_.LoadFromData(serdata);
-          qDebug() << config_.getWidth() << config_.getHeight() << config_.getFramerate();
-          emit successConnection();
-          
+          recieveConfig();
         });
-        
     }
     catch (std::exception& e)
     {
@@ -251,6 +165,104 @@ void ReciverMainWindow::updateConnectionStatus(bool connected)
     ui->connectionButton->setText(is_connected_ ? "Disconnect" : "Connect");
 }
 
+void ReciverMainWindow::recieveConfig()
+{
+    boost::system::error_code error_code;
+    boost::array<boost::int32_t, 1> config_size;
+    socket_.read_some(boost::asio::buffer(config_size), error_code);
+    if (error_code) {
+        emit errorConfigRead();
+        return ;
+    }
+    // read config serdata size in bytes
+    config_size_ = config_size[0];
+
+    std::string serdata;
+    // buffer enough to hold data
+    boost::array<char, 1024> config_buffer;
+
+    size_t len = socket_.read_some(boost::asio::buffer(config_buffer), error_code);
+    if (error_code) {
+        emit errorConfigRead();
+        return ;
+    }
+    if (len != config_size_) {
+        emit errorConfigRead();
+        return ;
+    }
+    std::copy( config_buffer.begin(),config_buffer.begin() + len, std::back_inserter(serdata));
+
+    try {
+        config_.LoadFromData(serdata);
+    } catch(std::exception e) {
+        qDebug() << e.what();
+        emit errorConfigRead();
+        return;
+    }
+    emit successConnection();
+}
+
+void ReciverMainWindow::recieveGeneratedImage(async::TimerThread &)
+{
+
+    boost::system::error_code error;
+    const auto buffer_size = config_.getWidth() * config_.getHeight();
+
+    auto start = async::TimerThread::FastTimeNamespace::now();
+    int total_read = buffer_size;
+
+    ReadBuffer buff;
+    image_data_.clear();
+    while (true) {
+
+      int len = socket_.read_some(boost::asio::buffer(buff), error);
+      if (len == 0) {
+        emit errorConnection();
+        return;
+      }
+      if (error) {
+        emit errorConnection();
+        return;
+      }
+      total_read -= len;
+
+      if (total_read < 0) {
+        len += total_read;
+        total_read = 0;
+      }
+
+      std::copy(buff.begin(), buff.begin() + len, std::back_inserter(image_data_));
+      if (total_read == 0) {
+        break;
+      }
+    }
+    if (image_data_.size() != buffer_size) {
+      qDebug() << "lost";
+      return;
+    }
+    frame_count_++;
+    auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start).count();
+    const auto fps = config_.getFramerate();
+    const auto real_fps_ms = duratio_ms;
+    const auto real_fps = (real_fps_ms == 0) ? fps : (1000.0) / real_fps_ms;
+
+    ui->realFramerateLabel->setText(QString::number(real_fps));
+    emit updateImage();
+}
+#include <QtConcurrent/QtConcurrent>
+
+void ReciverMainWindow::handleUpdateImage()
+{
+  QImage image(image_data_.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
+  ui->drawableArea->setPixmap(QPixmap::fromImage(image));
+  ui->newFrameLabel->setText(QTime::currentTime().toString());
+  ui->framecountLabel->setText(QString::number(frame_count_));
+//  auto future = std::async([&](){
+//      auto frame_index = frame_count_.load();
+//      image.save(QString("frame_")+QString::number(frame_index) + ".png");
+//  });
+
+}
 
 void ReciverMainWindow::setRecieverStyle()
 {
@@ -281,4 +293,6 @@ void ReciverMainWindow::setDefaultValues()
 {
     ui->ipLineEdit->setText("127.0.0.1");
     ui->portSpinBox->setValue(1234);
+    ui->savePathLabel->setText(QDir::current().canonicalPath());
+
 }
