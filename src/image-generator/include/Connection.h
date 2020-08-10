@@ -41,6 +41,8 @@ namespace server {
 
     resource::Config config_;
     std::atomic_int tick_count_;
+    std::atomic_int tick_ms_;
+
     tcp::socket socket_;
 
     std::unique_ptr<async::TimerThread>   generator_;

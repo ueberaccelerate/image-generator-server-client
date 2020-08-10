@@ -58,7 +58,6 @@ namespace server {
 
   void Connection::sendGenerateImage(async::TimerThread& t)
   {
-    std::cout << "sendGenerateImage\n";
     boost::system::error_code error;
     auto start = async::TimerThread::FastTimeNamespace::now();
     auto raw_data = generate_image(Size{ config_.getWidth(), config_.getHeight() });
@@ -68,51 +67,34 @@ namespace server {
 
     tick_count_++;
     auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start).count(); 
+    tick_ms_ = duratio_ms;
   }
 
   void Connection::updateStatistics(async::TimerThread& e)
-  { 
-    std::cout << "Update statistic" <<  "\n";
+  {
+    const auto real_fps_ms = tick_ms_.load();
+
+    const auto fps = config_.getFramerate();
+    const auto fps_ms = (1000.0 / config_.getFramerate());
+    const auto real_fps = (real_fps_ms == 0) ? fps : (1000.0) / real_fps_ms;
+
+    std::cout << "Update statistic " << e.timestamp()
+              << "config fps: " << fps      << " one frame: " << fps_ms     << " ms\n"
+              << "real   fps: " << real_fps << " one frame: " << real_fps_ms << " ms\n";
   }
 
   void Connection::start()
   {
-    sendConfig();
     tick_count_ = 0;
+    tick_ms_ = 0;
+
+    sendConfig();
 
     generator_ = std::make_unique<async::TimerThread>(config_.getFramerate(), boost::bind(&Connection::sendGenerateImage, this, _1));
     statistics_ = std::make_unique<async::TimerThread>(async::TimerThread::Interval(5000), boost::bind(&Connection::updateStatistics, this, _1));
-
-
-    //async::TimerThread generator{ config_.getFramerate(),[&](async::TimerThread& t) {
-    //    boost::system::error_code error;
-    //    auto start = async::TimerThread::FastTimeNamespace::now();
-    //    auto raw_data = generate_image(Size{ config_.getWidth(), config_.getHeight() });
-    //    auto len = boost::asio::write(socket_, boost::asio::buffer(raw_data), error);
-    //    if (error) {
-    //      t.stop();
-    //    }
-    //    tick_count_++;
-    //    auto duratio_ms = std::chrono::duration_cast<std::chrono::milliseconds>(async::TimerThread::FastTimeNamespace::now() - start).count(); 
-    //    const auto fps = config_.getFramerate();
-    //    const auto fps_ms = (1000.0 / config_.getFramerate());
-
-    //    const auto real_fps = (1000.0) / duratio_ms;
-    //    const auto real_fps_ms = duratio_ms;
-
-
-    //    //std::cout << "config fps: " << fps      << " one frame: " << fps_ms     << " ms\n";
-    //    //std::cout << "real   fps: " << real_fps << " one frame: " << duratio_ms << " ms\n";
-    //} };
-
-    //auto shared_pointer = shared_from_this();
-    //async::TimerThread statistic{async::TimerThread::Interval(5000), [&](async::TimerThread &e){
-    //  std::cout << "Update statistic" << std::endl;
-
-    //}};
   }
   Connection::~Connection() {
-    std::cout << "close connection: tick.number = " << tick_count_ << '\n';
+    std::cout << "close connection: tick.total_number = " << tick_count_ << '\n';
   }
   Connection::Connection(boost::asio::io_context& io_context, const resource::Config& config, HandlerError&& handler)
     : config_(config)

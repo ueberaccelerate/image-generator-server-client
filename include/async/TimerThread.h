@@ -60,6 +60,8 @@ public:
   void setFrequency(const Frequency &new_freq);
   void stop() noexcept;
 
+  std::string timestamp() const;
+
 private:
   std::future<void> create_timer_thread() noexcept;
   Interval make_interval() noexcept;

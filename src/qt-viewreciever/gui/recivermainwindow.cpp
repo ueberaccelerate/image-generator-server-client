@@ -71,18 +71,21 @@ void ReciverMainWindow::handleErrorAddress()
 {
     setInfo("ErrorAddress");
     updateConnectionStatus(false);
+    async_reader_ = nullptr;
 }
 
 void ReciverMainWindow::handleErrorConnection()
 {
     setInfo("ErrorConnection");
     updateConnectionStatus(false);
+    async_reader_ = nullptr;
 }
 
 void ReciverMainWindow::handleErrorCloseSocket()
 {
     setInfo("CloseSocket");
     updateConnectionStatus(false);
+    async_reader_ = nullptr;
 }
 
 void ReciverMainWindow::handleSuccessConnection()
@@ -98,7 +101,7 @@ void ReciverMainWindow::handleSuccessConnection()
 
     image_data_.reserve(config_.getWidth() * config_.getHeight());
 
-    async_reader_ = std::make_unique<async::TimerThread>(config_.getFramerate(), [&](async::TimerThread& t) {
+    async_reader_ = std::make_unique<async::TimerThread>(config_.getFramerate(), [&](async::TimerThread& ) {
 
       boost::system::error_code error;
       const auto buffer_size = config_.getWidth() * config_.getHeight();
@@ -106,7 +109,7 @@ void ReciverMainWindow::handleSuccessConnection()
       auto start = async::TimerThread::FastTimeNamespace::now();
       int total_read = buffer_size;
 
-      boost::array<unsigned char, 65535> buff;
+      ReadBuffer buff;
       image_data_.clear();
       while (true) {
         
@@ -140,12 +143,12 @@ void ReciverMainWindow::handleSuccessConnection()
       const auto fps = config_.getFramerate();
       const auto fps_ms = (1000.0 / config_.getFramerate());
 
-      const auto real_fps = (duratio_ms == 0) ? 60 : (1000.0) / duratio_ms;
       const auto real_fps_ms = duratio_ms;
+      const auto real_fps = (real_fps_ms == 0) ? 60 : (1000.0) / real_fps_ms;
 
 
       qDebug() <<  "config fps: " << fps      << " one frame: " << fps_ms     << " ms\n";
-      qDebug() <<  "real   fps: " << real_fps << " one frame: " << duratio_ms << " ms\n";
+      qDebug() <<  "real   fps: " << real_fps << " one frame: " << real_fps_ms << " ms\n";
 
       emit updateImage();
     });

@@ -77,6 +77,14 @@ namespace async {
   TimerThread::TimePoint TimerThread::take() {
     return TimeNamespace::now();
   }
+
+  std::string TimerThread::timestamp() const {
+    std::time_t t = TimeNamespace::to_time_t(TimeNamespace::now());
+    tm ltm;
+    //    localtime_s(&ltm, &t);
+    std::string timestr = ctime(&t);
+    return timestr;
+  }
   void TimerThread::preaty_print(const std::string& message, const TimePoint& point) {
     std::time_t t = TimeNamespace::to_time_t(point);
     tm ltm;

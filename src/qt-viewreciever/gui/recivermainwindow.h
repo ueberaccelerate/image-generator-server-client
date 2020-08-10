@@ -27,6 +27,7 @@ class ReciverMainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    using ReadBuffer = boost::array<unsigned char, 65535>;
     ReciverMainWindow(QWidget *parent = nullptr);
     ~ReciverMainWindow();
 signals:
