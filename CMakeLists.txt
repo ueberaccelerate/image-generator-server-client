@@ -13,6 +13,7 @@ add_library( cppwarnings INTERFACE)
 add_library(common	
 	include/resource/config.hpp
 	include/async/TimerThread.h
+        include/async/threadsafe_queue.h
 )
 
 set_project_warinigs(cppwarnings)

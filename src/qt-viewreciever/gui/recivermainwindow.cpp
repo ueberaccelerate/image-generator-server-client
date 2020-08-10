@@ -48,7 +48,8 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
                          this, &ReciverMainWindow::handleErrorConfigRead);
 
     qRegisterMetaType<std::vector<unsigned char>>("std::vector<unsigned char>");
-    connect(this, SIGNAL(updateImage()), this, SLOT(handleUpdateImage()));
+    connect(this, SIGNAL(updateImage(std::vector<unsigned char>)), this, SLOT(handleUpdateImage(std::vector<unsigned char>)));
+    async_save_ = std::make_unique<async::TimerThread>(async::TimerThread::Interval(1000), boost::bind(&ReciverMainWindow::saveGeneratedImage, this, _1));
 }
 
 ReciverMainWindow::~ReciverMainWindow()
@@ -214,8 +215,12 @@ void ReciverMainWindow::recieveGeneratedImage(async::TimerThread &)
     ReadBuffer buff;
     image_data_.clear();
     while (true) {
-
-      int len = socket_.read_some(boost::asio::buffer(buff), error);
+      int len{};
+      if (total_read > buff.size()) {
+         len = socket_.read_some(boost::asio::buffer(buff), error);
+      } else {
+         len = socket_.read_some(boost::asio::buffer(buff, total_read), error);
+      }
       if (len == 0) {
         emit errorConnection();
         return;
@@ -245,25 +250,38 @@ void ReciverMainWindow::recieveGeneratedImage(async::TimerThread &)
     const auto real_fps_ms = duratio_ms;
     const auto real_fps = (real_fps_ms == 0) ? fps : (1000.0) / real_fps_ms;
 
-    frame_count_.fetch_add(1, std::memory_order_acquire);
-    framerate_real_.store(real_fps, std::memory_order_acquire);
-//    frame_count_++;
-//    framerate_real_ = real_fps;
-    emit updateImage();
+    if (std::all_of(std::begin(image_data_), std::end(image_data_), [&](const auto value){return value == image_data_[0]; })) {
+        frame_count_++;
+        framerate_real_ = real_fps;
+        emit updateImage(image_data_);
+    }
 }
-#include <QtConcurrent/QtConcurrent>
-
-void ReciverMainWindow::handleUpdateImage()
+void ReciverMainWindow::saveGeneratedImage(async::TimerThread &)
 {
-  QImage image(image_data_.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
-  ui->drawableArea->setPixmap(QPixmap::fromImage(image));
+    try {
+        if(auto data_ptr = save_queue_.try_pop()) {
+            QImage image = QImage(data_ptr->image_data.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
+            image.save(QString("frame_")+QString::number(data_ptr->index) + ".png");
+        }
+    } catch (...) {
+    }
+}
+
+void ReciverMainWindow::handleUpdateImage(std::vector<unsigned char> buffer)
+{
+  auto frame_count = frame_count_.load();
+
+  SaveImageData data;
+  data.index = frame_count;
+  std::copy(buffer.begin(), buffer.end(), std::back_inserter(data.image_data));
+  save_queue_.push(data);
+
+  ui->drawableArea->setPixmap(QPixmap::fromImage(QImage(buffer.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8)));
   ui->newFrameLabel->setText(QTime::currentTime().toString());
-  ui->framecountLabel->setText(QString::number(frame_count_.load(std::memory_order_relaxed)));
-  ui->realFramerateLabel->setText(QString::number(framerate_real_.load(std::memory_order_relaxed)));
-//  auto future = std::async([&](){
-//      auto frame_index = frame_count_.load();
-//      image.save(QString("frame_")+QString::number(frame_index) + ".png");
-//  });
+  ui->framecountLabel->setText(QString::number(frame_count));
+  ui->realFramerateLabel->setText(QString::number(framerate_real_.load()));
+
+
 
 }
 

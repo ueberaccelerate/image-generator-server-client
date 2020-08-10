@@ -2,6 +2,7 @@
 #define RECIVERMAINWINDOW_H
 
 #include <async/TimerThread.h>
+#include <async/threadsafe_queue.h>
 #include <resource/config.hpp>
 
 #include <QMainWindow>
@@ -20,6 +21,13 @@
 QT_BEGIN_NAMESPACE
 namespace Ui { class ReciverMainWindow; }
 QT_END_NAMESPACE
+
+struct SaveImageData {
+    size_t index;
+    std::vector<unsigned char> image_data;
+};
+
+
 
 using boost::asio::ip::tcp;
 class ReciverMainWindow : public QMainWindow
@@ -40,7 +48,7 @@ signals:
     void sendConnection();
     void sendDisconnection();
 
-    void updateImage();
+    void updateImage(std::vector<unsigned char>);
 private slots:
     void handleErrorAddress();
     void handleErrorConnection();
@@ -53,7 +61,7 @@ private slots:
     void handleDisconnection();
 
     void handleConnectionClicked();
-    void handleUpdateImage();
+    void handleUpdateImage(std::vector<unsigned char>);
 
 private:
     Ui::ReciverMainWindow *ui;
@@ -68,11 +76,15 @@ private:
     std::atomic_int frame_count_;
     std::atomic_int framerate_real_;
 
+    async::threadsafe_queue<SaveImageData> save_queue_;
+    std::future<void> working_thread_;
+
     boost::asio::executor_work_guard<
       boost::asio::io_context::executor_type> work_;
     boost::scoped_ptr<boost::thread> work_thread_;
 
     std::unique_ptr< async::TimerThread> async_reader_;
+    std::unique_ptr< async::TimerThread> async_save_;
 
     std::vector<unsigned char> image_data_;
 
@@ -84,5 +96,6 @@ private:
 
     void recieveConfig();
     void recieveGeneratedImage(async::TimerThread& );
+    void saveGeneratedImage(async::TimerThread& );
 };
 #endif // RECIVERMAINWINDOW_H
