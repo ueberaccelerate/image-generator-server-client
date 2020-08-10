@@ -63,6 +63,7 @@ private slots:
     void handleConnectionClicked();
     void handleUpdateImage(std::vector<unsigned char>);
 
+    void close();
 private:
     Ui::ReciverMainWindow *ui;
 
@@ -97,5 +98,9 @@ private:
     void recieveConfig();
     void recieveGeneratedImage(async::TimerThread& );
     void saveGeneratedImage(async::TimerThread& );
+
+    // QWidget interface
+protected:
+    void closeEvent(QCloseEvent *event);
 };
 #endif // RECIVERMAINWINDOW_H

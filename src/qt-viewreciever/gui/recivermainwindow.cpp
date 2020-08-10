@@ -8,6 +8,8 @@
 #include <QGraphicsPixmapItem>
 #include <QTime>
 #include <QDir>
+#include <QCloseEvent>
+#include <QMessageBox>
 
 #include <random>
 #include <algorithm>
@@ -46,6 +48,7 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
 
     connect(this, &ReciverMainWindow::errorConfigRead,
                          this, &ReciverMainWindow::handleErrorConfigRead);
+
 
     qRegisterMetaType<std::vector<unsigned char>>("std::vector<unsigned char>");
     connect(this, SIGNAL(updateImage(std::vector<unsigned char>)), this, SLOT(handleUpdateImage(std::vector<unsigned char>)));
@@ -267,22 +270,43 @@ void ReciverMainWindow::saveGeneratedImage(async::TimerThread &)
     }
 }
 
+void ReciverMainWindow::closeEvent(QCloseEvent *event)
+{
+    if(!save_queue_.empty()) {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle("Saving data is still in progress");
+        msgBox.setText("Close?");
+        msgBox.setStandardButtons(QMessageBox::Yes);
+        msgBox.addButton(QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+        if(msgBox.exec() == QMessageBox::Yes){
+          event->accept();
+        }else {
+          event->ignore();
+        }
+    } else {
+        QMainWindow::closeEvent(event);
+    }
+}
+
 void ReciverMainWindow::handleUpdateImage(std::vector<unsigned char> buffer)
 {
   auto frame_count = frame_count_.load();
-
-  SaveImageData data;
-  data.index = frame_count;
-  std::copy(buffer.begin(), buffer.end(), std::back_inserter(data.image_data));
-  save_queue_.push(data);
 
   ui->drawableArea->setPixmap(QPixmap::fromImage(QImage(buffer.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8)));
   ui->newFrameLabel->setText(QTime::currentTime().toString());
   ui->framecountLabel->setText(QString::number(frame_count));
   ui->realFramerateLabel->setText(QString::number(framerate_real_.load()));
 
+  SaveImageData data;
+  data.index = frame_count;
+  data.image_data = buffer;
+  save_queue_.push(data);
+}
 
-
+void ReciverMainWindow::close()
+{
+    qDebug() << "sadsad";
 }
 
 void ReciverMainWindow::setRecieverStyle()

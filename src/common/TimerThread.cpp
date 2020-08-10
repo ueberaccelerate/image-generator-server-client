@@ -60,7 +60,7 @@ namespace async {
       std::cerr << "error: create timer thread failture\n";
       throw;
     }
-    return std::move(task);
+    return task;
   }
   TimerThread::Interval TimerThread::make_interval() noexcept {
     if (frequency_ <= 0 || frequency_ > 120) {

@@ -71,6 +71,12 @@ class threadsafe_queue final {
     queue_.pop();
     return result;
   }
+
+  NODISCARD bool empty() {
+      std::unique_lock<std::mutex> lock(queue_mutex_);
+      return queue_.empty();
+  }
+
   void interrupt_wait() { queue_cv_.notify_one(); }
   ~threadsafe_queue() { interrupt_wait(); }
 
