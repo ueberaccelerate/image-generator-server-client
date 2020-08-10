@@ -48,7 +48,7 @@ signals:
     void sendConnection();
     void sendDisconnection();
 
-    void updateImage(std::vector<unsigned char>);
+    void updateImage(const std::vector<unsigned char>&);
 private slots:
     void handleErrorAddress();
     void handleErrorConnection();
@@ -61,7 +61,7 @@ private slots:
     void handleDisconnection();
 
     void handleConnectionClicked();
-    void handleUpdateImage(std::vector<unsigned char>);
+    void handleUpdateImage(const std::vector<unsigned char>&);
 
     void close();
 private:
@@ -77,7 +77,7 @@ private:
     std::atomic_int frame_count_;
     std::atomic_int framerate_real_;
 
-    async::threadsafe_queue<SaveImageData> save_queue_;
+    async::threadsafe_queue<SaveImageData, 32> save_queue_;
     std::future<void> working_thread_;
 
     boost::asio::executor_work_guard<

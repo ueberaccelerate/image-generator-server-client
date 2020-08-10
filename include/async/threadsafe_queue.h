@@ -13,7 +13,7 @@
 namespace async {
 
 #define NODISCARD [[nodiscard]]
-template <typename T, typename Container = std::queue<T>>
+template <typename T, size_t FixedSize = 0, typename Container = std::queue<T>>
 class threadsafe_queue final {
   class threadsafe_empty_error : public std::exception {};
 
@@ -28,12 +28,29 @@ class threadsafe_queue final {
 
   void push(const value_type &value) {
     std::lock_guard<std::mutex> lock(queue_mutex_);
+
+    if(FixedSize == 0) {
+        queue_.push(value);
+        queue_cv_.notify_one();
+        return;
+    }
+    while(queue_.size() >= FixedSize) {
+        queue_.pop();
+    }
     queue_.push(value);
     queue_cv_.notify_one();
   }
 
   void push(value_type &&value) {
     std::lock_guard<std::mutex> lock(queue_mutex_);
+    if(FixedSize == 0) {
+        queue_.push(value);
+        queue_cv_.notify_one();
+        return;
+    }
+    while(queue_.size() >= FixedSize) {
+        queue_.pop();
+    }
     queue_.push(value);
     queue_cv_.notify_one();
   }
@@ -81,6 +98,7 @@ class threadsafe_queue final {
   ~threadsafe_queue() { interrupt_wait(); }
 
  private:
+  static constexpr size_t cFixedSize = FixedSize;
   std::mutex queue_mutex_;
   std::condition_variable queue_cv_;
   Container queue_;
