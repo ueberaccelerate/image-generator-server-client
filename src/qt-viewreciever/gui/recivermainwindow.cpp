@@ -24,7 +24,7 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
     , work_(boost::asio::make_work_guard(io_context_))
     , work_thread_(new boost::thread(boost::bind(&boost::asio::io_context::run, &io_context_))) {
     ui->setupUi(this);
-    //setFixedSize(width(),height()); 
+    setFixedSize(width(),height());
     setRecieverStyle();
     setDefaultValues();
 
@@ -213,7 +213,7 @@ void ReciverMainWindow::recieveGeneratedImage(async::TimerThread &)
     const auto buffer_size = config_.getWidth() * config_.getHeight();
 
     auto start = async::TimerThread::FastTimeNamespace::now();
-    int total_read = buffer_size;
+    size_t total_read = buffer_size;
 
     ReadBuffer buff;
     image_data_.clear();
@@ -296,13 +296,6 @@ void ReciverMainWindow::handleUpdateImage(const std::vector<unsigned char>& buff
   ui->newFrameLabel->setText(QTime::currentTime().toString());
   ui->framecountLabel->setText(QString::number(frame_count));
   ui->realFramerateLabel->setText(QString::number(framerate_real_.load()));
-
-
-}
-
-void ReciverMainWindow::close()
-{
-    qDebug() << "sadsad";
 }
 
 void ReciverMainWindow::setRecieverStyle()

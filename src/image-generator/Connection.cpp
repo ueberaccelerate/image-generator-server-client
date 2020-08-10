@@ -11,18 +11,15 @@ namespace {
     std::vector<unsigned char> generate_image(const server::Size& size) {
       std::random_device rd;  //Will be used to obtain a seed for the random number engine
       std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-      std::uniform_int_distribution<> distrib(33, 196);
-      std::vector<unsigned char> data(size.height*size.width, static_cast<unsigned char>(distrib(gen)));
-
+      std::uniform_int_distribution<> distrib(0, 255);
+      std::vector<unsigned char> data(size.height*size.width );
+      std::generate(data.begin(), data.end(), [&](){return static_cast<unsigned char>(distrib(gen));});
       return data;
     }
 }
 
 namespace server {
   using boost::asio::ip::tcp;
-
-
-
 
   Connection::pointer Connection::create(boost::asio::io_context& io_context, const resource::Config& config, HandlerError&& handler)
   {

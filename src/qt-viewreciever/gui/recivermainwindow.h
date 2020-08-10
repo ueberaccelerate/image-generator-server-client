@@ -63,7 +63,6 @@ private slots:
     void handleConnectionClicked();
     void handleUpdateImage(const std::vector<unsigned char>&);
 
-    void close();
 private:
     Ui::ReciverMainWindow *ui;
 
