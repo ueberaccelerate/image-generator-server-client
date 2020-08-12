@@ -26,7 +26,17 @@ namespace async {
 
   TimerThread::~TimerThread() noexcept {
     stop();
-    timer_future_.wait();
+
+    if (timer_future_.valid()) {
+      try {
+        timer_future_.get();
+      }  catch (std::exception e) {
+          std::cerr << "error: " << e.what();
+      }
+      catch (...) {
+        std::cerr << "error: create timer thread failture\n";
+      }
+    }
     preaty_print("destroy time", take());
   }
 
@@ -39,10 +49,10 @@ namespace async {
   }
 
   std::future<void> TimerThread::create_timer_thread() noexcept {
-    creation_time = take();
-    preaty_print("creation time", creation_time);
     std::future<void> task;
     try {
+      creation_time = take();
+      preaty_print("creation time", creation_time);
       task = std::async(std::launch::async, [&]() {
         start_task_time = take();
         preaty_print("start task", start_task_time);
@@ -56,9 +66,11 @@ namespace async {
         }
       });
     }
+    catch (std::exception e) {
+      std::cerr << "error: " << e.what();
+    }
     catch (...) {
       std::cerr << "error: create timer thread failture\n";
-      throw;
     }
     return task;
   }

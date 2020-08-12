@@ -52,7 +52,12 @@ ReciverMainWindow::ReciverMainWindow(QWidget *parent)
 
     qRegisterMetaType<std::vector<unsigned char>>("const std::vector<unsigned char>&");
     connect(this, SIGNAL(updateImage(const std::vector<unsigned char>&)), this, SLOT(handleUpdateImage(const std::vector<unsigned char>&)));
-    async_save_ = std::make_unique<async::TimerThread>(async::TimerThread::Interval(30), boost::bind(&ReciverMainWindow::saveGeneratedImage, this, _1));
+    try {
+      async_save_ = std::make_unique<async::TimerThread>(async::TimerThread::Interval(30), boost::bind(&ReciverMainWindow::saveGeneratedImage, this, _1));
+    }
+    catch (std::exception e) {
+      qDebug() << e.what();
+    }
 }
 
 ReciverMainWindow::~ReciverMainWindow()
@@ -265,7 +270,12 @@ void ReciverMainWindow::saveGeneratedImage(async::TimerThread &)
             QImage image = QImage(data_ptr->image_data.data(), config_.getWidth(), config_.getHeight(), QImage::Format_Grayscale8);
             image.save(QString("frame_")+QString::number(data_ptr->index) + ".png");
         }
-    } catch (...) {
+    }
+    catch (std::exception e) {
+      qDebug() << e.what();
+    }
+    catch (...) {
+      qDebug() << "Unknown error";
     }
 }
 
